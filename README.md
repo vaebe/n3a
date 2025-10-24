@@ -1,3 +1,3 @@
 # nest crud
 
-学习 nest 、GitHub actios 部署
+使用 nest 、langchain.ts 构建 AI gent
