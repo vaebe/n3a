@@ -10,6 +10,10 @@ import * as Joi from 'joi';
     ConfigModule.forRoot({
       validationSchema: Joi.object({
         OPENAI_API_KEY: Joi.string().required(),
+        LANGSMITH_TRACING: Joi.string().required(),
+        LANGSMITH_ENDPOINT: Joi.string().required(),
+        LANGSMITH_API_KEY: Joi.string().required(),
+        LANGSMITH_PROJECT: Joi.string().required(),
         NODE_ENV: Joi.string()
           .valid('development', 'production')
           .default('development'),
