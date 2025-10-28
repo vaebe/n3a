@@ -8,7 +8,6 @@ export class AiController {
 
   @Get(':id')
   chat(@Param('id') id: string) {
-    console.log(id, '-=-==');
     return this.aiService.chat(id);
   }
 }
