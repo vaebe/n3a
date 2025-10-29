@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "prepare": "npx simple-git-hooks",
-    "build": "nest build",
+    "build": "nest build n3a",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
