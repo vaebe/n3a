@@ -58,17 +58,6 @@ export class AiService {
 
     console.log(id);
 
-    // for await (const chunk of await agent.stream(
-    //   { messages },
-    //   { streamMode: 'updates' },
-    // )) {
-    //   const [step, content] = Object.entries(chunk)[0];
-    //   console.log(`step: ${step}`);
-    //   console.log(`content: ${JSON.stringify(content, null, 2)}`);
-    // }
-
-    const msg = await agent.invoke({ messages });
-
-    return msg;
+    return await agent.stream({ messages }, { streamMode: 'updates' });
   }
 }
