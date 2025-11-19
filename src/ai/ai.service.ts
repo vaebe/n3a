@@ -27,21 +27,22 @@ const handleToolErrors = createMiddleware({
 });
 
 const model = new ChatOpenAI({
-  model: 'deepseek-v3.2',
+  model: 'z-ai/glm-4.5-air:free',
   apiKey: process.env.OPENAI_API_KEY,
   configuration: {
-    baseURL: 'https://apis.iflow.cn/v1',
+    baseURL: 'https://openrouter.ai/api/v1',
+    defaultHeaders: {
+      'HTTP-Referer': 'https://blog.vaebe.cn/', // Optional. Site URL for rankings on openrouter.ai.
+      'X-Title': 'n3a', // Optional. Site title for rankings on openrouter.ai.
+    },
   },
-  temperature: 1.3,
 });
 
 const systemPrompt = `
 # 你是一个通用代理
 
 # 你拥有的工具
-
 getWeather: 获取天气情况
-
 `;
 
 @Injectable()
