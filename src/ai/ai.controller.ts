@@ -23,7 +23,11 @@ export class AiController {
     try {
       for await (const chunk of iterator) {
         const entries = Object.entries(chunk);
-        if (entries.length === 0) continue;
+
+        if (entries.length === 0) {
+          continue;
+        }
+
         const [step, content] = entries[0];
         const payload = { step, content };
         res.write(`data: ${JSON.stringify(payload)}\n\n`);

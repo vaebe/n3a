@@ -2,6 +2,10 @@
 
 使用 nest 、langchain.ts 构建 AI gent
 
+## openrouter
+
+项目使用 [openrouter]('https://openrouter.ai/') 提供的免费模型来实现功能！
+
 ## cli
 
 | 类型            | 命令                             | 生成文件路径                          |
