@@ -29,6 +29,10 @@ nest generate service user --no-spec
 nest generate controller user --no-spec
 ```
 
+## langchain cli
+
+执行 `npx @langchain/langgraph-cli dev` 运行 agent 并连接到 LangSmith Studio
+
 ## LangChain、AI SDK、Agent、LangSmith
 
 ### 1. LangChain 是什么？

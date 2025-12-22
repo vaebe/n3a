@@ -1,6 +1,7 @@
-import { ChatOpenAI } from '@langchain/openai';
 import { createAgent, createMiddleware, ToolMessage } from 'langchain';
 import { getWeather } from './utils/tools';
+import { mimoModel } from './models/mimo';
+import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 
 // 自定义中间件：处理工具调用错误
 const handleToolErrors = createMiddleware({
@@ -20,23 +21,9 @@ const handleToolErrors = createMiddleware({
   },
 });
 
-// 创建 AI 模型实例
-const model = new ChatOpenAI({
-  // 使用的模型
-  model: 'z-ai/glm-4.5-air:free',
-  // 从环境变量读取 API Key
-  apiKey: process.env.OPENAI_API_KEY,
-  configuration: {
-    // 自定义 OpenAI 代理接口
-    baseURL: 'https://openrouter.ai/api/v1',
-    defaultHeaders: {
-      // 可选，用于在 openrouter.ai 上进行排名的网站 URL。
-      'HTTP-Referer': 'https://blog.vaebe.cn/',
-      // 可选，用于在 openrouter.ai 上排名的网站标题。
-      'X-Title': 'n3a',
-    },
-  },
-});
+if (!process.env.NEON_PG_DB) {
+  console.error('checkpointer db url 不存在！');
+}
 
 // 系统提示：告诉 AI 它的角色和可用工具
 const systemPrompt = `
@@ -46,10 +33,16 @@ const systemPrompt = `
 getWeather: 获取天气情况
 `;
 
-// 创建 Agent
+const checkpointer = PostgresSaver.fromConnString(process.env.NEON_PG_DB ?? '');
+checkpointer.setup().catch((e) => {
+  console.error('checkpointer setup error', e);
+  throw e;
+});
+
 export const agent = createAgent({
-  model,
+  model: mimoModel,
   tools: [getWeather],
   middleware: [handleToolErrors],
   systemPrompt,
+  checkpointer: checkpointer,
 });
