@@ -6,8 +6,16 @@ export class AiService {
   async chat(id: string) {
     const messages = [{ role: 'user', content: '东京天气怎么样？' }];
 
+    const runner = await agent;
+
     console.log(id);
 
-    return await agent.stream({ messages }, { streamMode: 'updates' });
+    return runner.stream(
+      { messages },
+      {
+        streamMode: 'updates',
+        configurable: { thread_id: id || 'dev-thread' },
+      },
+    );
   }
 }

@@ -4,5 +4,8 @@
     "my_agent": "./src/ai/agent/index.ts:agent"
   },
   "env": ".env",
-  "image_distro": "wolfi"
+  "image_distro": "wolfi",
+  "persistence": {
+    "enabled": true
+  }
 }
