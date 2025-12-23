@@ -6,11 +6,9 @@ export class AiService {
   async chat(id: string) {
     const messages = [{ role: 'user', content: '东京天气怎么样？' }];
 
-    const runner = await agent;
-
     console.log(id);
 
-    return runner.stream(
+    return agent.stream(
       { messages },
       {
         streamMode: 'updates',
