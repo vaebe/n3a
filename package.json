@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@ai-sdk/langchain": "^2.0.6",
     "@langchain/core": "^1.1.7",
     "@langchain/langgraph": "^1.0.7",
     "@langchain/langgraph-checkpoint-postgres": "^1.0.0",
@@ -28,6 +29,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.10",
     "@nestjs/platform-express": "^11.1.10",
+    "ai": "^6.0.6",
     "joi": "^18.0.2",
     "langchain": "^1.2.2",
     "reflect-metadata": "^0.2.2",

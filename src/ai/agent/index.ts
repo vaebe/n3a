@@ -1,6 +1,6 @@
 import { createAgent, createMiddleware, ToolMessage } from 'langchain';
 import { getWeather } from './utils/tools';
-import { mimoModel } from './models/mimo';
+import { openrouterModel } from './models/openrouter';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 
 // 自定义中间件：处理工具调用错误
@@ -40,7 +40,7 @@ checkpointer.setup().catch((e) => {
 });
 
 export const agent = createAgent({
-  model: mimoModel,
+  model: openrouterModel,
   tools: [getWeather],
   middleware: [handleToolErrors],
   systemPrompt,
