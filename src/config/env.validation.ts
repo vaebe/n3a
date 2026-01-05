@@ -9,11 +9,11 @@ export const envValidationSchema = Joi.object({
   OPENAI_API_KEY: Joi.string().required(),
 
   // LangSmith configuration
-  LANGSMITH_TRACING: Joi.string().required(),
-  LANGSMITH_ENDPOINT: Joi.string().required(),
-  LANGSMITH_API_KEY: Joi.string().required(),
-  LANGSMITH_PROJECT: Joi.string().required(),
+  LANGSMITH_TRACING: Joi.string().optional(),
+  LANGSMITH_ENDPOINT: Joi.string().optional(),
+  LANGSMITH_API_KEY: Joi.string().optional(),
+  LANGSMITH_PROJECT: Joi.string().optional(),
 
   // Database configuration
-  NEON_PG_DB: Joi.string().optional(),
+  NEON_PG_DB: Joi.string(),
 });
