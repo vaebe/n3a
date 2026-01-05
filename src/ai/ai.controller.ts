@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Res, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { ChatDto, ApiBodyExamples } from './dto/chat.dto';
 import { toUIMessageStream } from '@ai-sdk/langchain';
@@ -17,11 +18,12 @@ export class AiController implements OnModuleInit {
   private checkpointer: PostgresSaver;
   private agent: ReturnType<typeof createAgent>;
 
+  constructor(private readonly configService: ConfigService) {}
+
   async onModuleInit() {
     // 初始化 checkpointer
-    this.checkpointer = PostgresSaver.fromConnString(
-      process.env.NEON_PG_DB ?? '',
-    );
+    const neonPgDb = this.configService.get<string>('NEON_PG_DB', '');
+    this.checkpointer = PostgresSaver.fromConnString(neonPgDb);
 
     try {
       await this.checkpointer.setup();
