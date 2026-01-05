@@ -12,7 +12,7 @@ const commonConfig = {
   // 自动记录 HTTP 请求日志
   autoLogging: {
     ignore: (req: IncomingMessage) => {
-      const ignorePaths = ['/health/*path', '/api/docs', '/api/docs-json'];
+      const ignorePaths = ['/health', '/api/docs', '/api/docs-json'];
       return ignorePaths.includes(req.url || '');
     },
   },
@@ -57,7 +57,7 @@ const devtTransport = {
 export const pinoConfig: Params = {
   pinoHttp: {
     ...commonConfig,
-    level: isProd ? 'info' : 'debug',
+    useLevel: isProd ? 'info' : 'debug',
     // 根据环境选择不同的 transport
     transport: isProd ? proTransport : devtTransport,
   },

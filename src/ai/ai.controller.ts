@@ -11,6 +11,7 @@ import { openrouterModel } from './agent/models/openrouter';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { systemPrompt } from './agent/prompts';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -18,7 +19,11 @@ export class AiController implements OnModuleInit {
   private checkpointer: PostgresSaver;
   private agent: ReturnType<typeof createAgent>;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectPinoLogger(AiController.name)
+    private readonly logger: PinoLogger,
+  ) {}
 
   async onModuleInit() {
     // 初始化 checkpointer
@@ -27,9 +32,9 @@ export class AiController implements OnModuleInit {
 
     try {
       await this.checkpointer.setup();
-      console.log('Checkpointer setup successfully');
+      this.logger.info('Checkpointer setup successfully');
     } catch (e) {
-      console.error('Checkpointer setup error', e);
+      this.logger.error(e, 'Checkpointer setup error');
     }
 
     // 初始化 agent
@@ -41,7 +46,7 @@ export class AiController implements OnModuleInit {
       checkpointer: this.checkpointer,
     });
 
-    console.log('Agent initialized successfully');
+    this.logger.info('Agent initialized successfully');
   }
 
   @Post()
@@ -68,10 +73,10 @@ export class AiController implements OnModuleInit {
     pipeUIMessageStreamToResponse({
       stream: toUIMessageStream(stream, {
         onStart: () => {
-          console.log('开始输出！');
+          this.logger.info('开始输出！');
         },
         onFinal: () => {
-          console.log('输出完成！');
+          this.logger.info('输出完成！');
         },
       }),
       response: res,
