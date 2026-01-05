@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { AiModule } from './ai/ai.module';
 import { ConfigModule } from '@nestjs/config';
 import { envValidationSchema } from './config/env.validation';
+import { LoggerModule } from 'nestjs-pino';
+import { pinoConfig } from './logger/pino.config';
 
 @Module({
   imports: [
@@ -15,6 +17,7 @@ import { envValidationSchema } from './config/env.validation';
         abortEarly: true, // true，在遇到第一个错误时就停止验证；false，返回所有错误。默认为false。
       },
     }),
+    LoggerModule.forRoot(pinoConfig),
     AiModule,
   ],
   controllers: [AppController],

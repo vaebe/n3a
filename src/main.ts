@@ -1,14 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { createWinstonLogger } from './plugins/winston';
 import { setupSwagger } from './plugins/swagger';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: createWinstonLogger(),
+    bufferLogs: true,
     cors: true,
   });
+
+  app.useLogger(app.get(Logger));
 
   // Enable global validation
   app.useGlobalPipes(
