@@ -14,6 +14,7 @@ export function setupSwagger(app: INestApplication) {
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
+      defaultModelsExpandDepth: -1, // 隐藏 Schemas 部分
     },
   });
 }
