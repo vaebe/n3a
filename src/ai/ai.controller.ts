@@ -1,15 +1,20 @@
 import { Controller, Post, Body, Param } from '@nestjs/common';
 import { AiService } from './ai.service';
-import type { UIMessage } from 'ai';
 import { toUIMessageStream } from '@ai-sdk/langchain';
 import { createUIMessageStreamResponse } from 'ai';
+import { ChatDto } from './dto/chat.dto';
 
 @Controller('ai')
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
   @Post(':id')
-  async chat(@Param('id') id: string, @Body() body: { messages: UIMessage[] }) {
+  async chat(@Param('id') id: string, @Body() body: ChatDto) {
+    // 验证请求体
+    if (!body || !body.messages) {
+      throw new Error('Request body must contain "messages" array');
+    }
+
     // 获取 LangChain agent 的流
     const langchainStream = await this.aiService.chat(id, body.messages);
 

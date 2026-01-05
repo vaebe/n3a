@@ -12,7 +12,7 @@ export class AiService {
     // 将 AI SDK 的 UIMessage 转换为 LangChain 的 BaseMessage 格式
     const langchainMessages = await toBaseMessages(messages);
 
-    return agent.stream(
+    return agent?.stream(
       { messages: langchainMessages },
       {
         streamMode: 'messages',

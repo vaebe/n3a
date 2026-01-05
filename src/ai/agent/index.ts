@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { createAgent, createMiddleware, ToolMessage } from 'langchain';
 import { getWeather } from './utils/tools';
 import { openrouterModel } from './models/openrouter';
@@ -21,10 +22,6 @@ const handleToolErrors = createMiddleware({
   },
 });
 
-if (!process.env.NEON_PG_DB) {
-  console.error('checkpointer db url 不存在！');
-}
-
 // 系统提示：告诉 AI 它的角色和可用工具
 const systemPrompt = `
 # 你是一个通用代理
@@ -32,6 +29,10 @@ const systemPrompt = `
 # 你拥有的工具
 getWeather: 获取天气情况
 `;
+
+if (!process.env.NEON_PG_DB) {
+  console.error('checkpointer db url 不存在！');
+}
 
 const checkpointer = PostgresSaver.fromConnString(process.env.NEON_PG_DB ?? '');
 checkpointer.setup().catch((e) => {
