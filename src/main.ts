@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { setupSwagger } from './plugins/swagger';
-import { Logger } from 'nestjs-pino';
+import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -26,6 +26,8 @@ async function bootstrap() {
 
   // Setup Swagger documentation
   setupSwagger(app);
+
+  app.useGlobalInterceptors(new LoggerErrorInterceptor());
 
   const PORT = process.env.PORT ?? 3000;
   await app.listen(PORT);
