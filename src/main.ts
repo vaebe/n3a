@@ -12,9 +12,6 @@ async function bootstrap() {
   // Set global API prefix
   app.setGlobalPrefix('api');
 
-  // Enable CORS
-  app.enableCors();
-
   // Setup Swagger documentation
   setupSwagger(app);
 
