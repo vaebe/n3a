@@ -1,47 +1,80 @@
-import { Controller } from '@nestjs/common';
-import { Get, Param, Res } from '@nestjs/common';
-import { AiService } from './ai.service';
+import { Controller, Post, Body, Res, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
+import { ChatDto, ApiBodyExamples } from './dto/chat.dto';
+import { toUIMessageStream } from '@ai-sdk/langchain';
+import { pipeUIMessageStreamToResponse } from 'ai';
+import { toBaseMessages } from '@ai-sdk/langchain';
+import { createAgent } from 'langchain';
+import { getWeather, handleToolErrors } from './agent/utils/tools';
+import { openrouterModel } from './agent/models/openrouter';
+import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
+import { systemPrompt } from './agent/prompts';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 
+@ApiTags('AI')
 @Controller('ai')
-export class AiController {
-  constructor(private readonly aiService: AiService) {}
+export class AiController implements OnModuleInit {
+  private checkpointer: PostgresSaver;
+  private agent: ReturnType<typeof createAgent>;
 
-  @Get(':id')
-  async chat(@Param('id') id: string, @Res() res: Response) {
-    // 设置 SSE 头
-    res.set({
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-    });
+  constructor(private readonly configService: ConfigService) {}
 
-    const iterator = (await this.aiService.chat(id)) as AsyncIterable<
-      Record<string, unknown>
-    >;
+  async onModuleInit() {
+    // 初始化 checkpointer
+    const neonPgDb = this.configService.get<string>('NEON_PG_DB', '');
+    this.checkpointer = PostgresSaver.fromConnString(neonPgDb);
 
     try {
-      for await (const chunk of iterator) {
-        const entries = Object.entries(chunk);
-
-        if (entries.length === 0) {
-          continue;
-        }
-
-        const [step, content] = entries[0];
-        const payload = { step, content };
-        res.write(`data: ${JSON.stringify(payload)}\n\n`);
-      }
-
-      res.write('event: done\ndata: {}\n\n');
-    } catch (err) {
-      res.write(
-        'event: error\ndata: ' +
-          JSON.stringify({ error: String(err) }) +
-          '\n\n',
-      );
-    } finally {
-      res.end();
+      await this.checkpointer.setup();
+      console.log('Checkpointer setup successfully');
+    } catch (e) {
+      console.error('Checkpointer setup error', e);
     }
+
+    // 初始化 agent
+    this.agent = createAgent({
+      model: openrouterModel,
+      tools: [getWeather],
+      middleware: [handleToolErrors],
+      systemPrompt,
+      checkpointer: this.checkpointer,
+    });
+
+    console.log('Agent initialized successfully');
+  }
+
+  @Post()
+  @ApiOperation({
+    summary: 'AI 聊天接口',
+    description: '使用 LangChain Agent 进行流式对话',
+  })
+  @ApiBody({
+    type: ChatDto,
+    description: 'AI 聊天请求',
+    examples: ApiBodyExamples,
+  })
+  async chat(@Body() body: ChatDto, @Res() res: Response) {
+    const langchainMessages = await toBaseMessages(body.messages);
+
+    const stream = await this.agent.stream(
+      { messages: langchainMessages },
+      {
+        streamMode: ['values', 'messages'],
+        configurable: { thread_id: body.id },
+      },
+    );
+
+    pipeUIMessageStreamToResponse({
+      stream: toUIMessageStream(stream, {
+        onStart: () => {
+          console.log('开始输出！');
+        },
+        onFinal: () => {
+          console.log('输出完成！');
+        },
+      }),
+      response: res,
+    });
   }
 }
