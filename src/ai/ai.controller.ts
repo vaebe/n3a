@@ -1,26 +1,48 @@
-import { Controller, Post, Body, Param } from '@nestjs/common';
-import { AiService } from './ai.service';
-import { toUIMessageStream } from '@ai-sdk/langchain';
-import { createUIMessageStreamResponse } from 'ai';
+import { Controller, Post, Body, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { ChatDto } from './dto/chat.dto';
+import { toUIMessageStream } from '@ai-sdk/langchain';
+import { pipeUIMessageStreamToResponse } from 'ai';
+import { toBaseMessages } from '@ai-sdk/langchain';
+import { agent } from './agent';
 
 @Controller('ai')
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
-
-  @Post(':id')
-  async chat(@Param('id') id: string, @Body() body: ChatDto) {
+  @Post()
+  async chat(@Body() body: ChatDto, @Res() res: Response) {
     // 验证请求体
-    if (!body || !body.messages) {
-      throw new Error('Request body must contain "messages" array');
+    if (!body || !body.id || !body.messages) {
+      return res.status(400).json({
+        error: 'Request body must contain "id" and "messages" fields',
+      });
     }
 
-    // 获取 LangChain agent 的流
-    const langchainStream = await this.aiService.chat(id, body.messages);
+    try {
+      console.log('Thread ID:', body.id);
+      console.log('Messages:', body.messages);
 
-    // 将 LangChain 流转换为 AI SDK 的 UI 消息流，并包装为标准响应
-    return createUIMessageStreamResponse({
-      stream: toUIMessageStream(langchainStream),
-    });
+      // 将 AI SDK 的 UIMessage 转换为 LangChain 的 BaseMessage 格式
+      const langchainMessages = await toBaseMessages(body.messages);
+
+      // 调用 LangChain agent 获取流
+      const langchainStream = await agent?.stream(
+        { messages: langchainMessages },
+        {
+          streamMode: 'messages',
+          configurable: { thread_id: body.id || 'dev-thread' },
+        },
+      );
+
+      // 使用 AI SDK 官方方法处理响应
+      pipeUIMessageStreamToResponse({
+        response: res,
+        stream: toUIMessageStream(langchainStream),
+      });
+    } catch (error) {
+      console.error('Chat error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
   }
 }
