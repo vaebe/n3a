@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Params } from 'nestjs-pino';
 import { join } from 'path';
 import type { IncomingMessage } from 'http';
@@ -7,7 +8,7 @@ const isProd = process.env.NODE_ENV === 'production';
 const commonConfig = {
   // 自动生成请求 ID
   genReqId: (req: IncomingMessage) =>
-    (req.headers['x-request-id'] as string) ?? crypto.randomUUID(),
+    (req.headers['x-request-id'] as string) ?? randomUUID(),
 
   // 自动记录 HTTP 请求日志
   autoLogging: {
