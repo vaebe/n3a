@@ -5,14 +5,14 @@ import * as z from 'zod';
 export const handleToolErrors = createMiddleware({
   name: 'HandleToolErrors',
   // wrapToolCall 在工具被调用时包裹处理逻辑
-  wrapToolCall: (request, handler) => {
+  wrapToolCall: async (request, handler) => {
     try {
       // 正常调用工具
-      return handler(request);
+      return await handler(request);
     } catch (error) {
       // 如果工具调用出错，返回自定义错误消息给模型
       return new ToolMessage({
-        content: `工具错误：请检查您的输入并重试。 (${error})`,
+        content: `工具错误：请检查输入并重试。 (${error})`,
         tool_call_id: request.toolCall.id!,
       });
     }
