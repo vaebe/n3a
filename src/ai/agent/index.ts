@@ -12,6 +12,7 @@ import { systemPrompt } from './prompts';
 const checkpointer = PostgresSaver.fromConnString(process.env.NEON_PG_DB ?? '');
 checkpointer.setup().catch((e) => {
   console.error('checkpointer setup error', e);
+  throw e;
 });
 
 export const agent = createAgent({
