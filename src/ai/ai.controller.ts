@@ -17,32 +17,26 @@ export class AiController {
       });
     }
 
-    try {
-      console.log('Thread ID:', body.id);
-      console.log('Messages:', body.messages);
-
-      // 将 AI SDK 的 UIMessage 转换为 LangChain 的 BaseMessage 格式
-      const langchainMessages = await toBaseMessages(body.messages);
-
-      // 调用 LangChain agent 获取流
-      const langchainStream = await agent?.stream(
-        { messages: langchainMessages },
-        {
-          streamMode: 'messages',
-          configurable: { thread_id: body.id || 'dev-thread' },
-        },
-      );
-
-      // 使用 AI SDK 官方方法处理响应
-      pipeUIMessageStreamToResponse({
-        response: res,
-        stream: toUIMessageStream(langchainStream),
+    // 验证 agent 是否存在
+    if (!agent) {
+      return res.status(500).json({
+        error: 'Agent is not initialized',
       });
-    } catch (error) {
-      console.error('Chat error:', error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Internal server error' });
-      }
     }
+
+    const langchainMessages = await toBaseMessages(body.messages);
+
+    const stream = await agent.stream(
+      { messages: langchainMessages },
+      {
+        streamMode: ['values', 'messages'],
+        configurable: { thread_id: body.id || 'dev-thread' },
+      },
+    );
+
+    pipeUIMessageStreamToResponse({
+      stream: toUIMessageStream(stream),
+      response: res,
+    });
   }
 }
