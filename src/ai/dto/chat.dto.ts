@@ -1,11 +1,14 @@
 import type { UIMessage } from 'ai';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsArray } from 'class-validator';
 
 export class ChatDto {
   @ApiProperty({
     description: '线程 ID，用于持久化对话历史',
     example: 'thread-123',
   })
+  @IsString()
+  @IsNotEmpty()
   id: string;
 
   @ApiProperty({
@@ -23,6 +26,8 @@ export class ChatDto {
       },
     ],
   })
+  @IsArray()
+  @IsNotEmpty()
   messages: UIMessage[];
 }
 

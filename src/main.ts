@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { createWinstonLogger } from './plugins/winston';
 import { setupSwagger } from './plugins/swagger';
@@ -8,6 +9,15 @@ async function bootstrap() {
     logger: createWinstonLogger(),
     cors: true,
   });
+
+  // Enable global validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Set global API prefix
   app.setGlobalPrefix('api');

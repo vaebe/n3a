@@ -15,5 +15,5 @@ export const envValidationSchema = Joi.object({
   LANGSMITH_PROJECT: Joi.string().optional(),
 
   // Database configuration
-  NEON_PG_DB: Joi.string(),
+  NEON_PG_DB: Joi.string().required(),
 });

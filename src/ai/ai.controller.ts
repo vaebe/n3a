@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { ChatDto, ApiBodyExamples } from './dto/chat.dto';
 import { toUIMessageStream } from '@ai-sdk/langchain';
-import { pipeUIMessageStreamToResponse, pipeTextStreamToResponse } from 'ai';
+import { pipeUIMessageStreamToResponse } from 'ai';
 import { toBaseMessages } from '@ai-sdk/langchain';
 import { createAgent } from 'langchain';
 import { getWeather, handleToolErrors } from './agent/utils/tools';
@@ -44,33 +44,6 @@ export class AiController implements OnModuleInit {
     console.log('Agent initialized successfully');
   }
 
-  /**
-   * 发送错误流响应
-   * @param res Express Response 对象
-   * @param errorMessage 错误信息
-   * @param statusCode HTTP 状态码
-   */
-  private sendErrorStream(
-    res: Response,
-    errorMessage: string,
-    statusCode: number,
-  ) {
-    // 创建一个包含错误消息的 ReadableStream
-    const errorStream = new ReadableStream<string>({
-      start(controller) {
-        controller.enqueue(errorMessage);
-        controller.close();
-      },
-    });
-
-    // 使用 AI SDK 的流式响应方法
-    pipeTextStreamToResponse({
-      response: res,
-      status: statusCode,
-      textStream: errorStream,
-    });
-  }
-
   @Post()
   @ApiOperation({
     summary: 'AI 聊天接口',
@@ -82,22 +55,13 @@ export class AiController implements OnModuleInit {
     examples: ApiBodyExamples,
   })
   async chat(@Body() body: ChatDto, @Res() res: Response) {
-    // 验证请求体
-    if (!body || !body.id || !body.messages) {
-      return this.sendErrorStream(
-        res,
-        'Request body must contain "id" and "messages" fields',
-        400,
-      );
-    }
-
     const langchainMessages = await toBaseMessages(body.messages);
 
     const stream = await this.agent.stream(
       { messages: langchainMessages },
       {
         streamMode: ['values', 'messages'],
-        configurable: { thread_id: body.id || 'dev-thread' },
+        configurable: { thread_id: body.id },
       },
     );
 
