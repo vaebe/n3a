@@ -1,15 +1,47 @@
-import { Controller, Post, Body, Res } from '@nestjs/common';
+import { Controller, Post, Body, Res, OnModuleInit } from '@nestjs/common';
 import type { Response } from 'express';
 import { ChatDto, ApiBodyExamples } from './dto/chat.dto';
 import { toUIMessageStream } from '@ai-sdk/langchain';
 import { pipeUIMessageStreamToResponse, pipeTextStreamToResponse } from 'ai';
 import { toBaseMessages } from '@ai-sdk/langchain';
-import { agent } from './agent';
+import { createAgent } from 'langchain';
+import { getWeather, handleToolErrors } from './agent/utils/tools';
+import { openrouterModel } from './agent/models/openrouter';
+import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
+import { systemPrompt } from './agent/prompts';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('AI')
 @Controller('ai')
-export class AiController {
+export class AiController implements OnModuleInit {
+  private checkpointer: PostgresSaver;
+  private agent: ReturnType<typeof createAgent>;
+
+  async onModuleInit() {
+    // 初始化 checkpointer
+    this.checkpointer = PostgresSaver.fromConnString(
+      process.env.NEON_PG_DB ?? '',
+    );
+
+    try {
+      await this.checkpointer.setup();
+      console.log('Checkpointer setup successfully');
+    } catch (e) {
+      console.error('Checkpointer setup error', e);
+    }
+
+    // 初始化 agent
+    this.agent = createAgent({
+      model: openrouterModel,
+      tools: [getWeather],
+      middleware: [handleToolErrors],
+      systemPrompt,
+      checkpointer: this.checkpointer,
+    });
+
+    console.log('Agent initialized successfully');
+  }
+
   /**
    * 发送错误流响应
    * @param res Express Response 对象
@@ -57,14 +89,9 @@ export class AiController {
       );
     }
 
-    // 验证 agent 是否存在
-    if (!agent) {
-      return this.sendErrorStream(res, 'Agent is not initialized', 500);
-    }
-
     const langchainMessages = await toBaseMessages(body.messages);
 
-    const stream = await agent.stream(
+    const stream = await this.agent.stream(
       { messages: langchainMessages },
       {
         streamMode: ['values', 'messages'],
