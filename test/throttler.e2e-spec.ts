@@ -48,9 +48,9 @@ describe('Throttler (e2e)', () => {
     it('使用 @SkipThrottle() 装饰器的端点不应被限流', async () => {
       // 健康检查端点使用了 @SkipThrottle() 装饰器
       for (let i = 0; i < 30; i++) {
-        const response = await request(app.getHttpServer()).get('/api');
+        const response = await request(app.getHttpServer()).get('/api/hello');
         expect(response.status).toBe(200);
-        expect(response.text).toBe('你的服务已经启动成功！');
+        expect(response.text).toBe('Hello World!');
       }
     });
 
