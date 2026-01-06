@@ -3,12 +3,15 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { createWinstonLogger } from './plugins/winston';
 import { setupSwagger } from './plugins/swagger';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: createWinstonLogger(),
     cors: true,
   });
+
+  app.use(helmet());
 
   // Enable global validation
   app.useGlobalPipes(
