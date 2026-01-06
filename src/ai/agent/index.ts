@@ -9,7 +9,9 @@ import { systemPrompt } from './prompts';
  * 使用 npx @langchain/langgraph-cli dev 启动服务，用于调试 agent
  */
 
-const checkpointer = PostgresSaver.fromConnString(process.env.NEON_PG_DB ?? '');
+const checkpointer = PostgresSaver.fromConnString(
+  process.env.LANGCHAIN_DB ?? '',
+);
 checkpointer.setup().catch((e) => {
   console.error('checkpointer setup error', e);
   throw e;

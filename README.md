@@ -42,6 +42,14 @@ pnpm test:e2e -- throttler.e2e-spec.ts
 pnpm test:e2e -- --watch
 ```
 
+## prisma
+
+```bash
+npx prisma migrate dev --name init
+
+npx prisma generate
+```
+
 ## langchain cli
 
 执行 `npx @langchain/langgraph-cli dev` 运行 agent 并连接到 LangSmith Studio

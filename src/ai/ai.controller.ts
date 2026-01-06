@@ -22,7 +22,7 @@ export class AiController implements OnModuleInit {
 
   async onModuleInit() {
     // 初始化 checkpointer
-    const neonPgDb = this.configService.get<string>('NEON_PG_DB', '');
+    const neonPgDb = this.configService.get<string>('LANGCHAIN_DB', '');
     this.checkpointer = PostgresSaver.fromConnString(neonPgDb);
 
     try {
