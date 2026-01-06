@@ -16,4 +16,9 @@ export const envValidationSchema = Joi.object({
 
   // Database configuration
   NEON_PG_DB: Joi.string().required(),
+
+  // Rate limiting configuration
+  THROTTLE_TTL: Joi.number().default(60000).min(1000),
+  THROTTLE_LIMIT: Joi.number().default(20).min(1),
+  THROTTLE_ENABLED: Joi.boolean().default(true),
 });

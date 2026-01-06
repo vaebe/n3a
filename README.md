@@ -29,6 +29,19 @@ nest generate service user --no-spec
 nest generate controller user --no-spec
 ```
 
+## 运行测试
+
+```bash
+# 运行所有 E2E 测试
+pnpm test:e2e
+
+# 运行特定的测试文件
+pnpm test:e2e -- throttler.e2e-spec.ts
+
+# 使用 watch 模式
+pnpm test:e2e -- --watch
+```
+
 ## langchain cli
 
 执行 `npx @langchain/langgraph-cli dev` 运行 agent 并连接到 LangSmith Studio
