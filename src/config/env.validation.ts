@@ -7,6 +7,7 @@ export const envValidationSchema = Joi.object({
 
   PORT: Joi.number().default(3000),
   OPENAI_API_KEY: Joi.string().required(),
+  OLLAMA_API_KEY: Joi.string(),
 
   // LangSmith configuration
   LANGSMITH_TRACING: Joi.string().optional(),

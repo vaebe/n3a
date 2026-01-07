@@ -1,6 +1,6 @@
 import { createAgent } from 'langchain';
 import { getWeather, handleToolErrors } from './utils/tools';
-import { openrouterModel } from './models/openrouter';
+import { openrouterModel } from './models';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { systemPrompt } from './prompts';
 

@@ -14,7 +14,7 @@ import { pipeUIMessageStreamToResponse } from 'ai';
 import { toBaseMessages } from '@ai-sdk/langchain';
 import { createAgent } from 'langchain';
 import { getWeather, handleToolErrors } from './agent/utils/tools';
-import { openrouterModel } from './agent/models/openrouter';
+import { openrouterModel } from './agent/models';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { systemPrompt } from './agent/prompts';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';

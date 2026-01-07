@@ -24,6 +24,7 @@
     "@langchain/core": "^1.1.7",
     "@langchain/langgraph": "^1.0.7",
     "@langchain/langgraph-checkpoint-postgres": "^1.0.0",
+    "@langchain/ollama": "^1.1.0",
     "@langchain/openai": "^1.2.0",
     "@nestjs/common": "^11.1.10",
     "@nestjs/config": "^4.0.2",

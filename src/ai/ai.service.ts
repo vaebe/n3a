@@ -51,8 +51,14 @@ export class AiService {
     const { message, userId, chatId } = props;
     const { id, role, metadata, parts } = message;
 
-    return this.prisma.aiMessage.create({
-      data: {
+    return this.prisma.aiMessage.upsert({
+      where: { id },
+      update: {
+        role,
+        metadata: JSON.stringify(metadata),
+        parts: JSON.stringify(parts),
+      },
+      create: {
         userId,
         id,
         conversationId: chatId,

@@ -1,9 +1,17 @@
 import { ChatOpenAI } from '@langchain/openai';
+import { Ollama } from '@langchain/ollama';
 
-// 创建 AI 模型实例
+export const ollamaModel = new Ollama({
+  model: 'deepseek-v3.2:cloud',
+  baseUrl: 'https://ollama.com',
+  headers: {
+    Authorization: 'Bearer ' + process.env.OLLAMA_API_KEY,
+  },
+});
+
 export const openrouterModel = new ChatOpenAI({
   // 使用的模型
-  model: 'z-ai/glm-4.5-air:free',
+  model: 'qwen/qwen3-coder:free',
   // 从环境变量读取 API Key
   apiKey: process.env.OPENAI_API_KEY,
   configuration: {
