@@ -1,4 +1,11 @@
-import { Controller, Post, Body, Res, OnModuleInit } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  OnModuleInit,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { ChatDto, ApiBodyExamples } from './dto/chat.dto';
@@ -15,6 +22,7 @@ import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 @ApiTags('AI')
 @Controller('ai')
 export class AiController implements OnModuleInit {
+  private readonly logger = new Logger(AiController.name);
   private checkpointer: PostgresSaver;
   private agent: ReturnType<typeof createAgent>;
 
@@ -22,14 +30,14 @@ export class AiController implements OnModuleInit {
 
   async onModuleInit() {
     // 初始化 checkpointer
-    const neonPgDb = this.configService.get<string>('LANGCHAIN_DB', '');
-    this.checkpointer = PostgresSaver.fromConnString(neonPgDb);
+    const LANGCHAIN_DB = this.configService.get<string>('LANGCHAIN_DB', '');
+    this.checkpointer = PostgresSaver.fromConnString(LANGCHAIN_DB);
 
     try {
       await this.checkpointer.setup();
-      console.log('Checkpointer setup successfully');
+      this.logger.log('Checkpointer setup successfully');
     } catch (e) {
-      console.error('Checkpointer setup error', e);
+      this.logger.error('Checkpointer setup error', e);
     }
 
     // 初始化 agent
@@ -41,7 +49,7 @@ export class AiController implements OnModuleInit {
       checkpointer: this.checkpointer,
     });
 
-    console.log('Agent initialized successfully');
+    this.logger.log('Agent initialized successfully');
   }
 
   @Post()
@@ -68,10 +76,10 @@ export class AiController implements OnModuleInit {
     pipeUIMessageStreamToResponse({
       stream: toUIMessageStream(stream, {
         onStart: () => {
-          console.log('开始输出！');
+          this.logger.log('开始输出！');
         },
         onFinal: () => {
-          console.log('输出完成！');
+          this.logger.log('输出完成！');
         },
       }),
       response: res,
