@@ -20,6 +20,7 @@ import { systemPrompt } from './agent/prompts';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AiService } from './ai.service';
 import type { UIMessage } from 'ai';
+import { nanoid } from 'nanoid';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -113,7 +114,7 @@ export class AiController implements OnModuleInit {
           // 保存 AI 响应消息
           try {
             const assistantMessage: UIMessage = {
-              id: `msg-${Date.now()}`,
+              id: nanoid(21),
               role: 'assistant',
               parts: [
                 {

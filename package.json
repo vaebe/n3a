@@ -41,6 +41,7 @@
     "helmet": "^8.1.0",
     "joi": "^18.0.2",
     "langchain": "^1.2.2",
+    "nanoid": "^5.1.6",
     "nest-winston": "^1.10.2",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
