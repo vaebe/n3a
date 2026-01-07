@@ -1,6 +1,6 @@
 import { createAgent } from 'langchain';
 import { getWeather, handleToolErrors } from './utils/tools';
-import { openrouterModel } from './models';
+import { initModel } from './models';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { systemPrompt } from './prompts';
 
@@ -17,8 +17,10 @@ checkpointer.setup().catch((e) => {
   throw e;
 });
 
+const model = initModel('ollama');
+
 export const agent = createAgent({
-  model: openrouterModel,
+  model,
   tools: [getWeather],
   middleware: [handleToolErrors],
   systemPrompt,

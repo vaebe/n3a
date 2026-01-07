@@ -14,7 +14,7 @@ import { pipeUIMessageStreamToResponse } from 'ai';
 import { toBaseMessages } from '@ai-sdk/langchain';
 import { createAgent } from 'langchain';
 import { getWeather, handleToolErrors } from './agent/utils/tools';
-import { openrouterModel } from './agent/models';
+import { initModel } from './agent/models';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { systemPrompt } from './agent/prompts';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
@@ -45,9 +45,11 @@ export class AiController implements OnModuleInit {
       this.logger.error('Checkpointer setup error', e);
     }
 
+    const model = initModel('ollama');
+
     // 初始化 agent
     this.agent = createAgent({
-      model: openrouterModel,
+      model,
       tools: [getWeather],
       middleware: [handleToolErrors],
       systemPrompt,
