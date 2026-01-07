@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { ChatDto, ApiBodyExamples } from './dto/chat.dto';
 import { toUIMessageStream } from '@ai-sdk/langchain';
-import { pipeUIMessageStreamToResponse } from 'ai';
+import { pipeUIMessageStreamToResponse, createUIMessageStream } from 'ai';
 import { toBaseMessages } from '@ai-sdk/langchain';
 import { createAgent } from 'langchain';
 import { getWeather, handleToolErrors } from './agent/utils/tools';
@@ -19,8 +19,6 @@ import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { systemPrompt } from './agent/prompts';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AiService } from './ai.service';
-import type { UIMessage } from 'ai';
-import { nanoid } from 'nanoid';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -103,41 +101,37 @@ export class AiController implements OnModuleInit {
       },
     );
 
+    const stream1 = createUIMessageStream({
+      execute: ({ writer }) => {
+        writer.merge(toUIMessageStream(stream));
+      },
+      onFinish: async (data) => {
+        console.log('onFinish data:', JSON.stringify(data), '\r\n');
+        console.log(
+          'responseMessage:',
+          JSON.stringify(data.responseMessage),
+          '\r\n',
+        );
+        console.log('messages:', JSON.stringify(data.messages), '\r\n');
+
+        // 保存完整的 AI 响应消息
+        try {
+          await this.aiService.createAiMessage({
+            message: data.responseMessage,
+            chatId,
+            userId,
+          });
+          this.logger.log(
+            `AI 消息已保存: ${data.responseMessage.id}, parts 数量: ${data.responseMessage.parts.length}`,
+          );
+        } catch (error) {
+          this.logger.error('保存 AI 消息失败', error);
+        }
+      },
+    });
+
     pipeUIMessageStreamToResponse({
-      stream: toUIMessageStream(stream, {
-        onStart: () => {
-          this.logger.log('开始输出！');
-        },
-        onFinal: async (message) => {
-          this.logger.log('输出完成！');
-
-          // 保存 AI 响应消息
-          try {
-            const assistantMessage: UIMessage = {
-              id: nanoid(21),
-              role: 'assistant',
-              parts: [
-                {
-                  type: 'text',
-                  text:
-                    typeof message === 'string'
-                      ? message
-                      : JSON.stringify(message),
-                },
-              ],
-            };
-
-            await this.aiService.createAiMessage({
-              message: assistantMessage,
-              chatId,
-              userId,
-            });
-            this.logger.log(`AI 消息已保存: ${assistantMessage.id}`);
-          } catch (error) {
-            this.logger.error('保存 AI 消息失败', error);
-          }
-        },
-      }),
+      stream: stream1,
       response: res,
     });
   }
