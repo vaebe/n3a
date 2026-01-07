@@ -13,6 +13,40 @@ interface CreateAiMessageProps {
 export class AiService {
   constructor(private prisma: PrismaService) {}
 
+  async ensureConversation(
+    chatId: string,
+    userId: string,
+    name?: string,
+  ): Promise<void> {
+    await this.prisma.aiConversation.upsert({
+      where: { id: chatId },
+      update: {},
+      create: {
+        id: chatId,
+        userId,
+        name: name || 'New Conversation',
+      },
+    });
+  }
+
+  async getHistoryMessages(
+    chatId: string,
+    userId: string,
+  ): Promise<UIMessage[]> {
+    const messages = await this.prisma.aiMessage.findMany({
+      where: {
+        conversationId: chatId,
+        userId,
+        deletedAt: null,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    return messages.map((msg) => this.aiMessageToUIMessage(msg));
+  }
+
   createAiMessage(props: CreateAiMessageProps): Promise<AiMessage> {
     const { message, userId, chatId } = props;
     const { id, role, metadata, parts } = message;
@@ -27,5 +61,16 @@ export class AiService {
         parts: JSON.stringify(parts),
       },
     });
+  }
+
+  private aiMessageToUIMessage(aiMessage: AiMessage): UIMessage {
+    return {
+      id: aiMessage.id,
+      role: aiMessage.role as 'user' | 'assistant' | 'system',
+      metadata: aiMessage.metadata
+        ? (JSON.parse(aiMessage.metadata) as Record<string, unknown>)
+        : undefined,
+      parts: JSON.parse(aiMessage.parts) as UIMessage['parts'],
+    };
   }
 }

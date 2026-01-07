@@ -18,6 +18,8 @@ import { openrouterModel } from './agent/models/openrouter';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { systemPrompt } from './agent/prompts';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { AiService } from './ai.service';
+import type { UIMessage } from 'ai';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -26,7 +28,10 @@ export class AiController implements OnModuleInit {
   private checkpointer: PostgresSaver;
   private agent: ReturnType<typeof createAgent>;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly aiService: AiService,
+  ) {}
 
   async onModuleInit() {
     // 初始化 checkpointer
@@ -63,7 +68,29 @@ export class AiController implements OnModuleInit {
     examples: ApiBodyExamples,
   })
   async chat(@Body() body: ChatDto, @Res() res: Response) {
-    const langchainMessages = await toBaseMessages(body.messages);
+    const userId = 'admin';
+    const chatId = body.id;
+
+    // 确保对话存在
+    await this.aiService.ensureConversation(chatId, userId);
+
+    // 获取历史消息
+    const historyMessages = await this.aiService.getHistoryMessages(
+      chatId,
+      userId,
+    );
+
+    // 保存新的用户消息
+    await this.aiService.createAiMessage({
+      message: body.message,
+      chatId,
+      userId,
+    });
+
+    // 合并历史消息和新消息
+    const allMessages = [...historyMessages, body.message];
+
+    const langchainMessages = await toBaseMessages(allMessages);
 
     const stream = await this.agent.stream(
       { messages: langchainMessages },
@@ -78,8 +105,34 @@ export class AiController implements OnModuleInit {
         onStart: () => {
           this.logger.log('开始输出！');
         },
-        onFinal: () => {
+        onFinal: async (message) => {
           this.logger.log('输出完成！');
+
+          // 保存 AI 响应消息
+          try {
+            const assistantMessage: UIMessage = {
+              id: `msg-${Date.now()}`,
+              role: 'assistant',
+              parts: [
+                {
+                  type: 'text',
+                  text:
+                    typeof message === 'string'
+                      ? message
+                      : JSON.stringify(message),
+                },
+              ],
+            };
+
+            await this.aiService.createAiMessage({
+              message: assistantMessage,
+              chatId,
+              userId,
+            });
+            this.logger.log(`AI 消息已保存: ${assistantMessage.id}`);
+          } catch (error) {
+            this.logger.error('保存 AI 消息失败', error);
+          }
         },
       }),
       response: res,
