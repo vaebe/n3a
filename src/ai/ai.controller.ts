@@ -1,47 +1,61 @@
-import { Controller, Post, Body, Res, OnModuleInit } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  OnModuleInit,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { ChatDto, ApiBodyExamples } from './dto/chat.dto';
 import { toUIMessageStream } from '@ai-sdk/langchain';
-import { pipeUIMessageStreamToResponse } from 'ai';
+import { pipeUIMessageStreamToResponse, createUIMessageStream } from 'ai';
 import { toBaseMessages } from '@ai-sdk/langchain';
 import { createAgent } from 'langchain';
 import { getWeather, handleToolErrors } from './agent/utils/tools';
-import { openrouterModel } from './agent/models/openrouter';
+import { initModel } from './agent/models';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { systemPrompt } from './agent/prompts';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { AiService } from './ai.service';
 
 @ApiTags('AI')
 @Controller('ai')
 export class AiController implements OnModuleInit {
+  private readonly logger = new Logger(AiController.name);
   private checkpointer: PostgresSaver;
   private agent: ReturnType<typeof createAgent>;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly aiService: AiService,
+  ) {}
 
   async onModuleInit() {
     // 初始化 checkpointer
-    const neonPgDb = this.configService.get<string>('NEON_PG_DB', '');
-    this.checkpointer = PostgresSaver.fromConnString(neonPgDb);
+    const LANGCHAIN_DB = this.configService.get<string>('LANGCHAIN_DB', '');
+    this.checkpointer = PostgresSaver.fromConnString(LANGCHAIN_DB);
 
     try {
       await this.checkpointer.setup();
-      console.log('Checkpointer setup successfully');
+      this.logger.log('Checkpointer setup successfully');
     } catch (e) {
-      console.error('Checkpointer setup error', e);
+      this.logger.error('Checkpointer setup error', e);
     }
+
+    const model = initModel('ollama');
 
     // 初始化 agent
     this.agent = createAgent({
-      model: openrouterModel,
+      model,
       tools: [getWeather],
       middleware: [handleToolErrors],
       systemPrompt,
       checkpointer: this.checkpointer,
     });
 
-    console.log('Agent initialized successfully');
+    this.logger.log('Agent initialized successfully');
   }
 
   @Post()
@@ -55,7 +69,29 @@ export class AiController implements OnModuleInit {
     examples: ApiBodyExamples,
   })
   async chat(@Body() body: ChatDto, @Res() res: Response) {
-    const langchainMessages = await toBaseMessages(body.messages);
+    const userId = 'admin';
+    const chatId = body.id;
+
+    // 确保对话存在
+    await this.aiService.ensureConversation(chatId, userId);
+
+    // 获取历史消息
+    const historyMessages = await this.aiService.getHistoryMessages(
+      chatId,
+      userId,
+    );
+
+    // 保存新的用户消息
+    await this.aiService.createAiMessage({
+      message: body.message,
+      chatId,
+      userId,
+    });
+
+    // 合并历史消息和新消息
+    const allMessages = [...historyMessages, body.message];
+
+    const langchainMessages = await toBaseMessages(allMessages);
 
     const stream = await this.agent.stream(
       { messages: langchainMessages },
@@ -65,15 +101,37 @@ export class AiController implements OnModuleInit {
       },
     );
 
+    const stream1 = createUIMessageStream({
+      execute: ({ writer }) => {
+        writer.merge(toUIMessageStream(stream));
+      },
+      onFinish: async (data) => {
+        console.log('onFinish data:', JSON.stringify(data), '\r\n');
+        console.log(
+          'responseMessage:',
+          JSON.stringify(data.responseMessage),
+          '\r\n',
+        );
+        console.log('messages:', JSON.stringify(data.messages), '\r\n');
+
+        // 保存完整的 AI 响应消息
+        try {
+          await this.aiService.createAiMessage({
+            message: data.responseMessage,
+            chatId,
+            userId,
+          });
+          this.logger.log(
+            `AI 消息已保存: ${data.responseMessage.id}, parts 数量: ${data.responseMessage.parts.length}`,
+          );
+        } catch (error) {
+          this.logger.error('保存 AI 消息失败', error);
+        }
+      },
+    });
+
     pipeUIMessageStreamToResponse({
-      stream: toUIMessageStream(stream, {
-        onStart: () => {
-          console.log('开始输出！');
-        },
-        onFinal: () => {
-          console.log('输出完成！');
-        },
-      }),
+      stream: stream1,
       response: res,
     });
   }

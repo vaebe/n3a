@@ -1,0 +1,41 @@
+generator client {
+  provider="prisma-client"
+  output="../generated/prisma"
+  moduleFormat="cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AiConversation {
+  id        String    @id @default(cuid())
+  name      String // 对话名称，可选
+  desc      String? // 对话描述
+  userId    String // 所属用户
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // 删除时间
+
+  messages AiMessage[] // 关联的消息
+
+  @@index([userId])
+  @@map("ai_conversation")
+}
+
+model AiMessage {
+  id             String    @id @default(cuid())
+  userId         String // 所属用户
+  conversationId String // 所属对话分组
+  role           String // 'system' | 'user' | 'assistant'
+  metadata       String? // 元数据 json 字符串 
+  parts          String // 对话数据 json 字符串 
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime? // 删除时间
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, conversationId])
+  @@map("ai_message")
+}

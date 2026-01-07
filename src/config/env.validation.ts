@@ -7,6 +7,7 @@ export const envValidationSchema = Joi.object({
 
   PORT: Joi.number().default(3000),
   OPENAI_API_KEY: Joi.string().required(),
+  OLLAMA_API_KEY: Joi.string(),
 
   // LangSmith configuration
   LANGSMITH_TRACING: Joi.string().optional(),
@@ -15,7 +16,8 @@ export const envValidationSchema = Joi.object({
   LANGSMITH_PROJECT: Joi.string().optional(),
 
   // Database configuration
-  NEON_PG_DB: Joi.string().required(),
+  LANGCHAIN_DB: Joi.string().required(),
+  PRISMA_DB: Joi.string().required(),
 
   // Rate limiting configuration
   THROTTLE_TTL: Joi.number().default(60000).min(1000),

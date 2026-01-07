@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsObject } from 'class-validator';
 
 export class ChatDto {
   @ApiProperty({
@@ -12,78 +12,52 @@ export class ChatDto {
   id: string;
 
   @ApiProperty({
-    description: 'AI SDK UIMessage 格式的消息数组',
-    example: [
-      {
-        id: 'msg-1',
-        role: 'user',
-        parts: [
-          {
-            type: 'text',
-            text: '你好',
-          },
-        ],
-      },
-    ],
+    description: 'AI SDK UIMessage 格式的单条消息',
+    example: {
+      id: 'msg-1',
+      role: 'user',
+      parts: [
+        {
+          type: 'text',
+          text: '你好',
+        },
+      ],
+    },
   })
-  @IsArray()
+  @IsObject()
   @IsNotEmpty()
-  messages: UIMessage[];
+  message: UIMessage;
 }
 
 export const ApiBodyExamples = {
   简单对话: {
     value: {
       id: 'thread-123',
-      messages: [
-        {
-          id: 'msg-1',
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              text: '你好，请介绍一下自己',
-            },
-          ],
-        },
-      ],
+      message: {
+        id: 'msg-1',
+        role: 'user',
+        parts: [
+          {
+            type: 'text',
+            text: '你好，请介绍一下自己',
+          },
+        ],
+      },
     },
   },
-  多轮对话: {
+  查询天气: {
     value: {
       id: 'thread-456',
-      messages: [
-        {
-          id: 'msg-1',
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              text: '今天北京的天气怎么样？',
-            },
-          ],
-        },
-        {
-          id: 'msg-2',
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              text: '我可以帮你查询北京的天气。',
-            },
-          ],
-        },
-        {
-          id: 'msg-3',
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              text: '好的，请查询',
-            },
-          ],
-        },
-      ],
+      message: {
+        id: 'msg-2',
+        role: 'user',
+        parts: [
+          {
+            type: 'text',
+            text: '今天北京的天气怎么样？',
+          },
+        ],
+      },
     },
   },
 };
