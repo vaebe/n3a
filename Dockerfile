@@ -16,6 +16,9 @@ RUN pnpm install --prod --frozen-lockfile && \
     # 安装全部依赖（包括开发依赖）
     pnpm install --frozen-lockfile
 
+# 生成 prisma
+RUN npx prisma generate
+
 # 多阶段构建 - 阶段2: 构建应用
 FROM node:20-alpine AS build
 
